@@ -874,63 +874,65 @@ if KIVY_AVAILABLE:
     class RHApp(MDApp):
         def build(self):
             request_android_permissions()
-            self.theme_cls.primary_palette = "Blue"
+            self.theme_cls.primary_palette = "Teal"
+            self.theme_cls.primary_hue = "700"
+            self.theme_cls.accent_palette = "Orange"
             self.theme_cls.theme_style = "Light"
             self.engine = DataEngine()
             self.pdf_path = ""
             self.dialog = None
             self.generated_files: Tuple[str, str] = ("", "")
 
-            screen = MDScreen(md_bg_color=(0.96, 0.98, 1, 1))
-            scroll = MDScrollView()
+            screen = MDScreen(md_bg_color=(0.95, 0.98, 0.96, 1))
+            
+            scroll = MDScrollView(pos_hint={"top": 1}, size_hint_y=1)
             layout = MDBoxLayout(
                 orientation="vertical",
-                padding=("18dp", "18dp", "18dp", "24dp"),
-                spacing="14dp",
+                padding=("20dp", "24dp", "20dp", "30dp"),
+                spacing="20dp",
                 size_hint_y=None,
             )
             layout.bind(minimum_height=layout.setter("height"))
 
             hero = MDCard(
                 orientation="vertical",
-                padding="18dp",
-                spacing="8dp",
-                radius=[22, 22, 22, 22],
-                elevation=3,
+                padding="24dp",
+                spacing="12dp",
+                radius=[24, 24, 24, 24],
+                elevation=4,
                 size_hint_y=None,
-                height="190dp",
+                height="220dp",
                 md_bg_color=(1, 1, 1, 1),
             )
             logo_path = get_logo_path()
             if logo_path:
-                hero.add_widget(KivyImage(source=logo_path, size_hint_y=None, height="58dp", allow_stretch=True, keep_ratio=True))
-            hero.add_widget(MDLabel(text=APP_TITLE, font_style="H5", bold=True, halign="center", size_hint_y=None, height="34dp"))
-            hero.add_widget(MDLabel(text=APP_SUBTITLE, font_style="Subtitle2", halign="center", theme_text_color="Secondary", size_hint_y=None, height="28dp"))
-            hero.add_widget(MDLabel(text="Rapports RH propres, rapides et prêts pour Excel", font_style="Caption", halign="center", theme_text_color="Secondary", size_hint_y=None, height="24dp"))
+                hero.add_widget(KivyImage(source=logo_path, size_hint_y=None, height="64dp", allow_stretch=True, keep_ratio=True))
+            hero.add_widget(MDLabel(text="RH OCP", font_style="H5", bold=True, halign="center", theme_text_color="Primary", size_hint_y=None, height="34dp"))
+            hero.add_widget(MDLabel(text="Heures Supplémentaires & Performance", font_style="Subtitle1", bold=True, halign="center", theme_text_color="Primary", size_hint_y=None, height="28dp"))
+            hero.add_widget(MDLabel(text="Solution automatisée pour générer vos rapports Excel", font_style="Caption", halign="center", theme_text_color="Secondary", size_hint_y=None, height="24dp"))
             layout.add_widget(hero)
 
             dates_card = MDCard(
                 orientation="vertical",
-                padding="14dp",
-                spacing="10dp",
-                radius=[18, 18, 18, 18],
+                padding="20dp",
+                spacing="16dp",
+                radius=[24, 24, 24, 24],
                 elevation=2,
                 size_hint_y=None,
                 md_bg_color=(1, 1, 1, 1),
             )
             dates_card.bind(minimum_height=dates_card.setter("height"))
-            dates_card.add_widget(MDLabel(text="1) Périodes de présence", font_style="Subtitle1", bold=True, size_hint_y=None, height="30dp"))
-            dates_card.add_widget(MDLabel(text="Format : AAAA-MM-JJ — remplissez S01, puis ajoutez S02→S05 selon le mois.", font_style="Caption", theme_text_color="Secondary", size_hint_y=None, height="32dp"))
+            dates_card.add_widget(MDLabel(text="📅 Périodes de présence", font_style="Subtitle1", bold=True, size_hint_y=None, height="24dp"))
+            dates_card.add_widget(MDLabel(text="Format AAAA-MM-JJ (Ex: 2026-05-01)", font_style="Caption", theme_text_color="Secondary", size_hint_y=None, height="20dp"))
 
             self.entries: Dict[str, Any] = {}
             for week in ["S01", "S02", "S03", "S04", "S05"]:
-                row = MDBoxLayout(spacing="8dp", size_hint_y=None, height="58dp")
+                row = MDBoxLayout(spacing="16dp", size_hint_y=None, height="64dp")
                 for suffix, label in [("_start", "Du"), ("_end", "Au")]:
                     field = MDTextField(
                         hint_text=f"{week} {label}",
-                        helper_text="AAAA-MM-JJ",
-                        mode="rectangle",
-                        font_size="13sp",
+                        mode="round",
+                        font_size="14sp",
                     )
                     self.entries[f"{week.lower()}{suffix}"] = field
                     row.add_widget(field)
@@ -939,25 +941,35 @@ if KIVY_AVAILABLE:
 
             file_card = MDCard(
                 orientation="vertical",
-                padding="14dp",
-                spacing="12dp",
-                radius=[18, 18, 18, 18],
+                padding="20dp",
+                spacing="16dp",
+                radius=[24, 24, 24, 24],
                 elevation=2,
                 size_hint_y=None,
-                height="210dp",
+                height="240dp",
                 md_bg_color=(1, 1, 1, 1),
             )
-            file_card.add_widget(MDLabel(text="2) PDF source", font_style="Subtitle1", bold=True, size_hint_y=None, height="30dp"))
-            self.btn_select = MDRaisedButton(text="Choisir le fichier PDF", size_hint_y=None, height="48dp")
+            file_card.add_widget(MDLabel(text="📄 Sélection du PDF", font_style="Subtitle1", bold=True, size_hint_y=None, height="24dp"))
+            
+            self.btn_select = MDRaisedButton(
+                text="Choisir le fichier PDF",
+                pos_hint={"center_x": 0.5},
+                size_hint_y=None,
+                height="54dp",
+                md_bg_color=(0.13, 0.55, 0.30, 1),
+            )
             self.btn_select.bind(on_press=self.select_file)
             file_card.add_widget(self.btn_select)
-            self.lbl_path = MDLabel(text="Aucun fichier sélectionné", halign="center", size_hint_y=None, height="34dp", theme_text_color="Secondary")
+            
+            self.lbl_path = MDLabel(text="Aucun fichier sélectionné", halign="center", font_style="Body2", size_hint_y=None, height="30dp", theme_text_color="Secondary")
             file_card.add_widget(self.lbl_path)
+            
             self.btn_process = MDRaisedButton(
-                text="Générer les 2 fichiers Excel",
+                text="Générer les Rapports Excel",
+                pos_hint={"center_x": 0.5},
                 size_hint_y=None,
-                height="50dp",
-                md_bg_color=(0.07, 0.42, 0.25, 1),
+                height="54dp",
+                md_bg_color=(0.13, 0.55, 0.30, 1),
                 disabled=True,
             )
             self.btn_process.bind(on_press=self.start_processing)
@@ -966,18 +978,18 @@ if KIVY_AVAILABLE:
 
             status_card = MDCard(
                 orientation="vertical",
-                padding="14dp",
-                spacing="10dp",
-                radius=[18, 18, 18, 18],
+                padding="20dp",
+                spacing="12dp",
+                radius=[24, 24, 24, 24],
                 elevation=1,
                 size_hint_y=None,
-                height="116dp",
+                height="120dp",
                 md_bg_color=(1, 1, 1, 1),
             )
-            status_card.add_widget(MDLabel(text="État du traitement", font_style="Subtitle1", bold=True, size_hint_y=None, height="28dp"))
-            self.progress_bar = MDProgressBar(value=0, size_hint_y=None, height="8dp")
+            status_card.add_widget(MDLabel(text="⚙️ Progression", font_style="Subtitle1", bold=True, size_hint_y=None, height="24dp"))
+            self.progress_bar = MDProgressBar(value=0, size_hint_y=None, height="10dp", color=(0.13, 0.55, 0.30, 1))
             status_card.add_widget(self.progress_bar)
-            self.lbl_status = MDLabel(text="Prêt.", halign="center", size_hint_y=None, height="42dp")
+            self.lbl_status = MDLabel(text="Prêt à démarrer.", halign="center", font_style="Body2", size_hint_y=None, height="30dp")
             status_card.add_widget(self.lbl_status)
             layout.add_widget(status_card)
 
