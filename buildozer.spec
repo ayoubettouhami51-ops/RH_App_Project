@@ -2,7 +2,7 @@
 
 # Application
 # Buildozer utilise ce fichier pour créer le package Android.
-title = RH Pro Report
+title = My New App Name
 package.name = rhproreport
 package.domain = org.ocp
 version = 1.1.0
@@ -21,8 +21,8 @@ fullscreen = 0
 
 # Assets
 # Décommentez si vous ajoutez vos propres icônes.
-# icon.filename = %(source.dir)s/icon.png
-# presplash.filename = %(source.dir)s/presplash.png
+icon.filename = %(source.dir)s/icon.png
+presplash.filename = %(source.dir)s/presplash.png
 
 # Android
 android.api = 33
