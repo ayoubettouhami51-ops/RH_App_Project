@@ -3,9 +3,9 @@
 # Application
 # Buildozer utilise ce fichier pour créer le package Android.
 title = My New App Name
-package.name = rhproreport
-package.domain = org.ocp
-version = 1.1.0
+package.name = mynewapp
+package.domain = com.mycompany
+version = 2.0.0
 
 # Sources
 source.dir = .
