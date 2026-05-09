@@ -25,9 +25,9 @@ from openpyxl.drawing.image import Image as XLImage
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 
-APP_TITLE = "RH Pro Report"
+APP_TITLE = "RH OCP"
 APP_SUBTITLE = "PDF → Prime de Performance + Heures Supplémentaires"
-APP_PACKAGE = "org.ocp.rhproreport"
+APP_PACKAGE = "com.mycompany.rhocp"
 OUTPUT_FOLDER_NAME = "RH_Reports"
 
 ABSENCE_CODES = {"RM", "RC", "PEAS", "CA", "RHJ", "IRR", "JF", "ABS", "MAL"}
@@ -92,7 +92,7 @@ def get_logo_path() -> Optional[str]:
     candidates = [
         app_base_dir() / "ocp_logo.png",
         Path("ocp_logo.png"),
-        Path("/data/data/org.ocp.rhproreport/files/app/ocp_logo.png"),
+        Path(f"/data/data/{APP_PACKAGE}/files/app/ocp_logo.png"),
     ]
     for candidate in candidates:
         if candidate.exists() and candidate.is_file():
@@ -189,22 +189,21 @@ def materialize_pdf_path(selected_path: str) -> str:
             PythonActivity = autoclass("org.kivy.android.PythonActivity")
             activity = PythonActivity.mActivity
             resolver = activity.getContentResolver()
-            input_stream = resolver.openInputStream(Uri.parse(selected_path))
-            if input_stream is None:
+            
+            uri = Uri.parse(selected_path)
+            pfd = resolver.openFileDescriptor(uri, "r")
+            if pfd is None:
                 raise ValueError("Impossible d'ouvrir le fichier sélectionné.")
 
+            fd = pfd.getFd()
             out_dir = Path(app_storage_path()) / "selected_files"
             out_dir.mkdir(parents=True, exist_ok=True)
             out_path = out_dir / f"selected_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-            buffer = bytearray(1024 * 64)
-            with open(out_path, "wb") as output:
-                while True:
-                    count = input_stream.read(buffer)
-                    if count == -1 or count is None:
-                        break
-                    if count > 0:
-                        output.write(buffer[:count])
-            input_stream.close()
+            
+            with os.fdopen(os.dup(fd), 'rb') as f_in, open(out_path, "wb") as f_out:
+                shutil.copyfileobj(f_in, f_out)
+                
+            pfd.close()
             return str(out_path)
         except Exception as exc:
             raise ValueError(
