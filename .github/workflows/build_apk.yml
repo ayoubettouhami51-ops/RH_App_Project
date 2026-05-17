@@ -1,78 +1,55 @@
-# ──────────────────────────────────────────────────────────────
-#  GitHub Actions — Build APK pour RH Pro Report (Kivy/KivyMD)
-#  Pousse le projet sur GitHub et l'APK sera construit automatiquement.
-# ──────────────────────────────────────────────────────────────
-name: Build Android APK
+name: Build Flutter APK
 
 on:
   push:
-    branches: [main, master]
-  workflow_dispatch:  # Permet le lancement manuel depuis GitHub
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    - uses: actions/checkout@v3
 
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
+    - name: Install Java
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'zulu'
+        java-version: '17'
 
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            build-essential \
-            git \
-            ffmpeg \
-            libsdl2-dev \
-            libsdl2-image-dev \
-            libsdl2-mixer-dev \
-            libsdl2-ttf-dev \
-            libportmidi-dev \
-            libswscale-dev \
-            libavformat-dev \
-            libavcodec-dev \
-            zlib1g-dev \
-            libgstreamer1.0-dev \
-            gstreamer1.0-plugins-base \
-            libffi-dev \
-            libssl-dev \
-            autoconf \
-            automake \
-            libtool \
-            pkg-config \
-            cmake \
-            unzip \
-            openjdk-17-jdk
+    - name: Install Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.16.0'
+        channel: 'stable'
 
-      - name: Install Python build tools
-        run: |
-          python -m pip install --upgrade pip setuptools wheel
-          python -m pip install cython==3.0.10 virtualenv
-          python -m pip install buildozer
+    - name: Initialize Flutter Project Structure
+      run: |
+        flutter create --platforms android .
+        rm -f test/widget_test.dart
 
-      - name: Cache Buildozer global directory
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.buildozer
-          key: buildozer-${{ runner.os }}-${{ hashFiles('buildozer.spec') }}
-          restore-keys: |
-            buildozer-${{ runner.os }}-
+    - name: Configure Android Permissions
+      run: |
+        MANIFEST_FILE="android/app/src/main/AndroidManifest.xml"
+        # Insert permissions before <application
+        sed -i '/<application/i \    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />\n    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />\n    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />' $MANIFEST_FILE
 
-      - name: Build debug APK
-        run: |
-          buildozer -v android debug
+    - name: Get dependencies
+      run: flutter pub get
 
-      - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: RHProReport-debug-apk
-          path: bin/*.apk
-          if-no-files-found: error
+    - name: Generate Icons and Splash Screen
+      run: |
+        dart run flutter_launcher_icons
+        dart run flutter_native_splash:create
+
+    - name: Build APK
+      run: flutter build apk --release
+
+    - name: Upload APK Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: app-release
+        path: build/app/outputs/flutter-apk/app-release.apk

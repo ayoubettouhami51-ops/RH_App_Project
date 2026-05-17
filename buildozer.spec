@@ -5,31 +5,33 @@
 title = RH OCP
 package.name = rhocp
 package.domain = com.mycompany
-version = 2.0.0
+version = 2.1.0
 
 # Sources
 source.dir = .
 source.include_exts = py,png,jpg,jpeg,kv,atlas,json,txt,md
-source.exclude_dirs = tests,.git,__pycache__,.pytest_cache
+source.exclude_dirs = tests,.git,__pycache__,.pytest_cache,.github
 
 # Python / Kivy
-requirements = python3==3.11.5,hostpython3==3.11.5,kivy==2.3.0,kivymd==1.2.0,pdfplumber,pdfminer.six,openpyxl,Pillow,plyer,pyjnius
+# Note : cryptography retiré (problèmes de compilation native sur Android).
+# et_xmlfile ajouté (dépendance obligatoire d'openpyxl).
+# chardet/charset-normalizer ajoutés (dépendances de pdfminer.six).
+requirements = python3,kivy==2.3.0,kivymd==1.2.0,pdfplumber,pdfminer.six,openpyxl,et_xmlfile,Pillow,plyer,chardet,charset-normalizer
 
 # UI
 orientation = portrait
 fullscreen = 0
 
 # Assets
-# Décommentez si vous ajoutez vos propres icônes.
 icon.filename = %(source.dir)s/icon.png
 presplash.filename = %(source.dir)s/presplash.png
 
 # Android
 android.api = 33
 android.minapi = 23
-android.ndk = 25b
+android.ndk = 25.1.8937393
 android.ndk_api = 23
-android.archs = arm64-v8a, armeabi-v7a
+android.archs = arm64-v8a
 android.accept_sdk_license = True
 android.allow_backup = True
 
@@ -38,7 +40,6 @@ android.allow_backup = True
 android.permissions = android.permission.READ_EXTERNAL_STORAGE,android.permission.WRITE_EXTERNAL_STORAGE,android.permission.MANAGE_EXTERNAL_STORAGE
 
 # Artifacts
-android.release_artifact = aab
 android.debug_artifact = apk
 
 [buildozer]

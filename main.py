@@ -17,13 +17,19 @@ import traceback
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple
+from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Set, Tuple
 
-import openpyxl
-import pdfplumber
-from openpyxl.drawing.image import Image as XLImage
-from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
-from openpyxl.utils import get_column_letter
+DEPS_AVAILABLE = True
+DEPS_ERROR = ""
+try:
+    import openpyxl
+    from openpyxl.drawing.image import Image as XLImage
+    from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+    from openpyxl.utils import get_column_letter
+    import pdfplumber
+except ImportError as e:
+    DEPS_AVAILABLE = False
+    DEPS_ERROR = str(e)
 
 APP_TITLE = "RH OCP"
 APP_SUBTITLE = "PDF → Prime de Performance + Heures Supplémentaires"
@@ -131,7 +137,7 @@ def get_output_dir() -> Path:
     ])
 
     last_error: Optional[Exception] = None
-    seen: set[str] = set()
+    seen: Set[str] = set()
     for base in candidates:
         try:
             base = base.expanduser()
@@ -234,7 +240,8 @@ def common_styles() -> Tuple[Border, Alignment]:
     return thin, center
 
 
-def style_range_border(ws: openpyxl.worksheet.worksheet.Worksheet, cell_range: str, border: Border) -> None:
+def style_range_border(ws: Any, cell_range: str, border: Any) -> None:
+    """Applique une bordure à toutes les cellules d'une plage."""
     for row in ws[cell_range]:
         for cell in row:
             cell.border = border
@@ -586,7 +593,7 @@ class DataEngine:
     def deduplicate_records(self, employees: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Évite les doublons fréquents quand pdfplumber extrait deux fois un tableau."""
         output: List[Dict[str, Any]] = []
-        seen: set[Tuple[str, str, str]] = set()
+        seen: Set[Tuple[str, str, str]] = set()
         for emp in employees:
             key = (str(emp.get("matricule", "")).strip(), str(emp.get("name", "")).strip(), str(emp.get("code", "")).strip())
             if key in seen:
@@ -883,9 +890,17 @@ if KIVY_AVAILABLE:
             self.dialog = None
             self.generated_files: Tuple[str, str] = ("", "")
 
+            if not DEPS_AVAILABLE:
+                screen = MDScreen(md_bg_color=(0.95, 0.98, 0.96, 1))
+                layout = MDBoxLayout(orientation="vertical", padding="20dp", spacing="20dp", pos_hint={"center_x": 0.5, "center_y": 0.5})
+                layout.add_widget(MDLabel(text="Erreur de dépendances", font_style="H5", bold=True, halign="center", theme_text_color="Error"))
+                layout.add_widget(MDLabel(text=f"Impossible de charger les modules requis.\n\nErreur : {DEPS_ERROR}\n\nVérifiez buildozer.spec ou contactez le support.", halign="center"))
+                screen.add_widget(layout)
+                return screen
+
             screen = MDScreen(md_bg_color=(0.95, 0.98, 0.96, 1))
             
-            scroll = MDScrollView(pos_hint={"top": 1}, size_hint_y=1)
+            scroll = MDScrollView(size_hint=(1, 1))
             layout = MDBoxLayout(
                 orientation="vertical",
                 padding=("20dp", "24dp", "20dp", "30dp"),
@@ -931,7 +946,7 @@ if KIVY_AVAILABLE:
                 for suffix, label in [("_start", "Du"), ("_end", "Au")]:
                     field = MDTextField(
                         hint_text=f"{week} {label}",
-                        mode="round",
+                        mode="rectangle",
                         font_size="14sp",
                     )
                     self.entries[f"{week.lower()}{suffix}"] = field
@@ -999,7 +1014,7 @@ if KIVY_AVAILABLE:
 
         def show_snackbar(self, text: str) -> None:
             try:
-                if "MDSnackbar" in globals() and MDSnackbar and MDSnackbarText:
+                if MDSnackbar is not None and MDSnackbarText is not None:
                     MDSnackbar(MDSnackbarText(text=text), duration=3, pos_hint={"center_x": 0.5}, size_hint_x=0.92).open()
                 else:
                     Snackbar(text=text).open()  # type: ignore[name-defined]
